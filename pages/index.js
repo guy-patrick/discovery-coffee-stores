@@ -1,16 +1,32 @@
 import Head from "next/head";
+import { useEffect } from "react";
 import Banner from "../components/banner/banner.component";
 import Card from "../components/card/card.component";
 import styles from "../styles/home.module.css";
-import coffeeStores from "../data/coffee-stores.json";
+import { Fragment, useState } from "react";
+import retrieveCoffeeStores from "../utils/coffee-store.utils";
+import useTrackLocation from "../hooks/use-track-location";
 
 export default function Home({ coffeeStores }) {
-  console.log(coffeeStores);
-  const { container, main, cardLayout } = styles;
+  const { container, main, cardLayout, heading2 } = styles;
 
-  function handleOnClick() {
-    console.log("clicked");
-  }
+  const { handleTrackLocation, latLong } = useTrackLocation();
+
+  const [coffeeStoresNearMe, setCoffeeStoresNearMe] = useState([]);
+
+  useEffect(() => {
+    if (latLong) {
+      try {
+        async function getCoffeeStoresNearMe(limit) {
+          const coffeeStores = await retrieveCoffeeStores(latLong, limit);
+          setCoffeeStoresNearMe(coffeeStores);
+        }
+        getCoffeeStoresNearMe(40);
+      } catch (error) {
+        console.error(error);
+      }
+    }
+  }, [latLong]);
 
   return (
     <div className={container}>
@@ -23,19 +39,37 @@ export default function Home({ coffeeStores }) {
       <main className={main}>
         <Banner
           buttonText="View stores nearby"
-          onClickHandler={handleOnClick}
+          onClickHandler={handleTrackLocation}
         />
-        <div className={cardLayout}>
-          {coffeeStores.map((coffeeStore) => (
-            <Card key={coffeeStore.id} coffeeStore={coffeeStore} />
-          ))}
-        </div>
+        {coffeeStoresNearMe.length > 0 && (
+          <Fragment>
+            <h2 className={heading2}>Stores near me</h2>
+            <div className={cardLayout}>
+              {coffeeStoresNearMe.map((coffeeStore) => (
+                <Card key={coffeeStore.id} coffeeStore={coffeeStore} />
+              ))}
+            </div>
+          </Fragment>
+        )}
+        {coffeeStores.length > 0 && (
+          <Fragment>
+            <h2 className={heading2}>Toronto store</h2>
+            <div className={cardLayout}>
+              {coffeeStores.map((coffeeStore) => (
+                <Card key={coffeeStore.id} coffeeStore={coffeeStore} />
+              ))}
+            </div>
+          </Fragment>
+        )}
       </main>
     </div>
   );
 }
 
 export async function getStaticProps() {
+  var coffeeStores = await retrieveCoffeeStores();
+  coffeeStores = JSON.parse(JSON.stringify(coffeeStores));
+
   return {
     props: {
       coffeeStores,

@@ -15,7 +15,7 @@ function Card({ coffeeStore }) {
   const { name, imgUrl } = coffeeStore;
 
   return (
-    <Link href="/coffee-store/0">
+    <Link href={`/coffee-store/${coffeeStore.id}`}>
       <a className={cardLink}>
         <div className={`${container} glass`}>
           <div className={cardHeaderWrapper}>
